@@ -1,0 +1,24 @@
+# .NET
+**/bin/
+**/obj/
+
+# Next.js e Node
+**/node_modules/
+**/.next/
+**/out/
+
+# Configurazioni locali e credenziali
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Editor e sistema operativo
+.vs/
+.DS_Store
+Thumbs.db
+
+# Log
+*.log

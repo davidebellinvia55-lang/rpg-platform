@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: rpg_platform
+      POSTGRES_USER: rpg_dev
+      POSTGRES_PASSWORD: rpg_local_dev
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+
+volumes:
+  postgres_data:
