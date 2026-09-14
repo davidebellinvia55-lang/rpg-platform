@@ -1,3 +1,4 @@
+import Link from "next/link";
 import CampaignForm from "./campaign-form";
 
 type Campaign = {
@@ -50,7 +51,11 @@ export default async function Home() {
           <ul className="space-y-4">
             {campaigns.map((campaign) => (
               <li key={campaign.id} className="rounded-xl border p-5">
-                <h3 className="text-lg font-semibold">{campaign.name}</h3>
+                <h3 className="text-lg font-semibold">
+                  <Link href={`/campaigns/${campaign.id}`} className="hover:underline">
+                    {campaign.name}
+                  </Link>
+                </h3>
                 <p className="mt-2 whitespace-pre-wrap">
                   {campaign.description || "Nessuna descrizione."}
                 </p>

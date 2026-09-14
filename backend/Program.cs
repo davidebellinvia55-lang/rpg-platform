@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RpgPlatform.Api.Campaigns;
 using RpgPlatform.Api.Data;
+using RpgPlatform.Api.Characters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,8 +84,118 @@ app.MapGet("/api/campaigns/{id:guid}", async (
     return Results.Ok(campaign);
 });
 
+app.MapGet("/api/campaigns/{campaignId:guid}/characters", async (
+    Guid campaignId,
+    AppDbContext db) =>
+{
+    var campaignExists = await db.Campaigns
+        .AnyAsync(c => c.Id == campaignId);
+
+    if (!campaignExists)
+    {
+        return Results.NotFound();
+    }
+
+    var characters = await db.Characters
+        .AsNoTracking()
+        .Where(c => c.CampaignId == campaignId)
+        .OrderBy(c => c.Name)
+        .Select(c => new
+        {
+            c.Id,
+            c.CampaignId,
+            c.Name,
+            c.Biography
+        })
+        .ToListAsync();
+
+    return Results.Ok(characters);
+});
+
+app.MapPost("/api/campaigns/{campaignId:guid}/characters", async (
+    Guid campaignId,
+    CreateCharacterRequest request,
+    AppDbContext db) =>
+{
+    var campaignExists = await db.Campaigns
+        .AnyAsync(c => c.Id == campaignId);
+
+    if (!campaignExists)
+    {
+        return Results.NotFound();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Name)
+        || request.Name.Trim().Length > 120)
+    {
+        return Results.BadRequest(new
+        {
+            error = "Il nome è obbligatorio e può avere al massimo 120 caratteri."
+        });
+    }
+
+    if ((request.Biography?.Length ?? 0) > 8000)
+    {
+        return Results.BadRequest(new
+        {
+            error = "La biografia può avere al massimo 8000 caratteri."
+        });
+    }
+
+    var character = new Character
+    {
+        CampaignId = campaignId,
+        Name = request.Name.Trim(),
+        Biography = request.Biography?.Trim() ?? ""
+    };
+
+    db.Characters.Add(character);
+    await db.SaveChangesAsync();
+
+    return Results.Created(
+        $"/api/campaigns/{campaignId}/characters/{character.Id}",
+        new
+        {
+            character.Id,
+            character.CampaignId,
+            character.Name,
+            character.Biography
+        });
+});
+
+app.MapGet(
+    "/api/campaigns/{campaignId:guid}/characters/{characterId:guid}",
+    async (
+        Guid campaignId,
+        Guid characterId,
+        AppDbContext db) =>
+{
+    var character = await db.Characters
+        .AsNoTracking()
+        .Where(c => c.CampaignId == campaignId && c.Id == characterId)
+        .Select(c => new
+        {
+            c.Id,
+            c.CampaignId,
+            c.Name,
+            c.Biography
+        })
+        .FirstOrDefaultAsync();
+
+    if (character is null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(character);
+});
+
 app.Run();
 
 public sealed record CreateCampaignRequest(
     string? Name,
     string? Description);
+
+public sealed record CreateCharacterRequest(
+    string? Name,
+    string? Biography);
