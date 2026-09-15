@@ -190,6 +190,55 @@ app.MapGet(
     return Results.Ok(character);
 });
 
+app.MapPut(
+    "/api/campaigns/{campaignId:guid}/characters/{characterId:guid}",
+    async (
+        Guid campaignId,
+        Guid characterId,
+        UpdateCharacterRequest request,
+        AppDbContext db) =>
+{
+    var character = await db.Characters
+        .FirstOrDefaultAsync(c =>
+            c.CampaignId == campaignId &&
+            c.Id == characterId);
+
+    if (character is null)
+    {
+        return Results.NotFound();
+    }
+
+    if (string.IsNullOrWhiteSpace(request.Name)
+        || request.Name.Trim().Length > 120)
+    {
+        return Results.BadRequest(new
+        {
+            error = "Il nome è obbligatorio e può avere al massimo 120 caratteri."
+        });
+    }
+
+    if ((request.Biography?.Length ?? 0) > 8000)
+    {
+        return Results.BadRequest(new
+        {
+            error = "La biografia può avere al massimo 8000 caratteri."
+        });
+    }
+
+    character.Name = request.Name.Trim();
+    character.Biography = request.Biography?.Trim() ?? "";
+
+    await db.SaveChangesAsync();
+
+    return Results.Ok(new
+    {
+        character.Id,
+        character.CampaignId,
+        character.Name,
+        character.Biography
+    });
+});
+
 app.Run();
 
 public sealed record CreateCampaignRequest(
@@ -197,5 +246,9 @@ public sealed record CreateCampaignRequest(
     string? Description);
 
 public sealed record CreateCharacterRequest(
+    string? Name,
+    string? Biography);
+
+public sealed record UpdateCharacterRequest(
     string? Name,
     string? Biography);

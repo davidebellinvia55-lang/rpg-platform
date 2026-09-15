@@ -90,7 +90,12 @@ export default async function CampaignPage({
             {characters.map((character) => (
               <li key={character.id} className="rounded-xl border p-5">
                 <h3 className="text-lg font-semibold">
-                  {character.name}
+                  <Link
+                    href={`/campaigns/${campaign.id}/characters/${character.id}`}
+                    className="text-blue-500 hover:underline"
+                  >
+                    {character.name}
+                  </Link>
                 </h3>
                 <p className="mt-2 whitespace-pre-wrap">
                   {character.biography || "Nessuna biografia."}
